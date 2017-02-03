@@ -61,6 +61,16 @@
         android:layout_alignParentTop="true"
         android:layout_toEndOf="@+id/patid" />
 
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/sex"
+        android:text="View Heartbeat"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="115dp"
+        android:id="@+id/start" />
+
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -68,30 +78,18 @@
         android:textAlignment="center"
         android:text=""
         android:ems="5"
-        android:layout_marginStart="50dp"
         android:id="@+id/inputage"
+        android:selectAllOnFocus="true"
         android:layout_alignBaseline="@+id/age"
         android:layout_alignBottom="@+id/age"
-        android:layout_alignStart="@+id/male"
-        android:selectAllOnFocus="true" />
+        android:layout_alignStart="@+id/inputpatid" />
 
-
-
-    <EditText
+    <RadioGroup
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:inputType="number"
-        android:textAlignment="center"
-        android:text=""
-        android:ems="5"
-        android:layout_marginStart="27dp"
-        android:layout_toRightOf="@+id/patid"
-        android:layout_marginTop="21.5dp"
-        android:layout_below="@id/inputage"
-        android:id="@+id/inputpatid"
-        android:textColorLink="?attr/actionMenuTextColor"
-        android:selectAllOnFocus="true" />
-
+        android:orientation="horizontal"
+        android:layout_below="@+id/inputpatid"
+        android:layout_alignEnd="@+id/inputname">
 
     <RadioButton
     android:text="Male"
@@ -112,14 +110,19 @@
         android:layout_marginTop="21dp"
         android:layout_marginStart="30dp"
         android:id="@+id/female" />
+    </RadioGroup>
 
-    <Button
+    <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/male"
-        android:text="View Heartbeat"
-        android:layout_marginTop="30dp"
-        android:layout_marginStart="115dp"
-        android:id="@+id/start" />
+        android:inputType="number"
+        android:textAlignment="center"
+        android:text=""
+        android:ems="5"
+        android:id="@+id/inputpatid"
+        android:textColorLink="?attr/actionMenuTextColor"
+        android:selectAllOnFocus="true"
+        android:layout_alignTop="@+id/patid"
+        android:layout_alignEnd="@+id/start" />
 
 </RelativeLayout>
