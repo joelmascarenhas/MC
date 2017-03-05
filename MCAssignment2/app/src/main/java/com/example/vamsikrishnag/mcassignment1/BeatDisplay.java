@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -47,6 +48,7 @@ public class BeatDisplay extends Activity {
     private Sensor Accelerometer;// = AcclManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
     private LineGraphSeries<DataPoint> values;
+    private LineGraphSeries<DataPoint> secondValues;
     private int counter = 0;
 
     private Button runButton;
@@ -163,6 +165,9 @@ public class BeatDisplay extends Activity {
 
         gv = (GraphView) findViewById(R.id.graph);
         values = new LineGraphSeries<DataPoint>();
+        values.setColor(Color.parseColor("#ff0000"));
+        secondValues = new LineGraphSeries<DataPoint>();
+        secondValues.setColor(Color.parseColor("#0000ff"));
         vp = gv.getViewport();
         vp.setYAxisBoundsManual(true);
         vp.setMaxX(10);
@@ -203,6 +208,7 @@ public class BeatDisplay extends Activity {
                 if(gv.getSeries().isEmpty())
                 {
                     gv.addSeries(values);
+                    gv.addSeries(secondValues);
                     keyThread = new Thread(new Runnable() {
                         @Override
                         public void run() {
@@ -242,12 +248,11 @@ public class BeatDisplay extends Activity {
 
     private void appendValues(){
         Log.d("Table's name",tableName);
-
+        float fl;
         //Cursor sel=dbCon.rawQuery("SELECT * FROM "+tableName,null);
         try {
             Cursor sel = dbCon.rawQuery("SELECT * FROM " + tableName + " ORDER BY Time_Stamp DESC LIMIT 1;", null);
             sel.moveToFirst();
-            float fl;
             do {
                 int timeStamp = sel.getInt(0);
                 float x = sel.getFloat(1);
@@ -259,6 +264,7 @@ public class BeatDisplay extends Activity {
             } while (sel.moveToNext());
             //float fl = new Random().nextFloat() * (10f);
             values.appendData(new DataPoint(counter++, fl), false, 10);
+            secondValues.appendData(new DataPoint(counter++, fl+2.5f), false, 10);
         }
         catch (Exception e)
         {
