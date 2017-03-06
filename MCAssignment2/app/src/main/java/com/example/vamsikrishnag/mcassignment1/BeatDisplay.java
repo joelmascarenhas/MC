@@ -64,6 +64,7 @@ public class BeatDisplay extends Activity {
     private Viewport vp;
     private boolean firstStart = true;
     String tableName;
+    boolean flag=true;
 
     long previousTime=0;
     private SensorEventListener acclListener=new SensorEventListener() {
@@ -78,7 +79,7 @@ public class BeatDisplay extends Activity {
                 float z = acclEvent.values[2];
                 long currentTime = System.currentTimeMillis();
                 String msg=Long.toString(currentTime)+","+Float.toString(x)+","+Float.toString(y)+","+Float.toString(z);
-                Log.d("Accelerometer Data",msg);
+                //Log.d("Accelerometer Data",msg);
                 if ((currentTime-previousTime)>1000) {
                     //dbCon=openOrCreateDatabase("Heart Beat",MODE_PRIVATE,null);
                     try {
@@ -223,6 +224,7 @@ public class BeatDisplay extends Activity {
                         @Override
                         public void run() {
                             for (int i=0;!stopIt;i++){
+
                                 runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
@@ -234,6 +236,7 @@ public class BeatDisplay extends Activity {
                                 }catch (InterruptedException e){
                                     Log.d("Interrupted",e.toString());
                                 }
+                                //flag=false;
                             }
                         }
                     });
@@ -251,6 +254,7 @@ public class BeatDisplay extends Activity {
             @Override
             public void onClick(View v) {
                 stopIt = true;
+                flag=true;
                 gv.removeAllSeries();
             }
         });
@@ -260,9 +264,16 @@ public class BeatDisplay extends Activity {
         Log.d("Table's name",tableName);
         float fl;
         float x,y,z;
+        String selectQuery="SELECT * FROM " + tableName + " ORDER BY Time_Stamp DESC LIMIT 1;";
+        if(flag)
+        {
+            selectQuery="SELECT * FROM " + tableName + " ORDER BY Time_Stamp DESC LIMIT 10;";
+            flag=false;
+        }
         //Cursor sel=dbCon.rawQuery("SELECT * FROM "+tableName,null);
         try {
-            Cursor sel = dbCon.rawQuery("SELECT * FROM " + tableName + " ORDER BY Time_Stamp DESC LIMIT 1;", null);
+            Cursor sel = dbCon.rawQuery(selectQuery, null);
+            int c=0;
             sel.moveToFirst();
             do {
                 int timeStamp = sel.getInt(0);
@@ -270,13 +281,17 @@ public class BeatDisplay extends Activity {
                 y = sel.getFloat(2);
                 z = sel.getFloat(3);
                 fl = (x + y + z);
-                String row = Float.toString(timeStamp) + "," + Float.toString(x) + "," + Float.toString(y) + "," + Float.toString(z);
-                Log.d("Row: ", Float.toString(fl) + " " + row);
+                c++;
+                String row = Integer.toString(c)+","+Float.toString(timeStamp) + "," + Float.toString(x) + "," + Float.toString(y) + "," + Float.toString(z);
+                Log.d("Row Val: ", Float.toString(fl) + " " + row);
+                values.appendData(new DataPoint(counter++, x), true, 12);
+                secondValues.appendData(new DataPoint(counter2++, y), true, 12);
+                thirdValues.appendData(new DataPoint(counter3++, z), true, 12);
+                //values.appendData(new DataPoint(counter++, x), true, 12);
             } while (sel.moveToNext());
+            Log.d("C: ", Integer.toString(c));
             //float fl = new Random().nextFloat() * (10f);
-            values.appendData(new DataPoint(counter++, x), true, 12);
-            secondValues.appendData(new DataPoint(counter2++, y), true, 12);
-            thirdValues.appendData(new DataPoint(counter3++, z), true, 12);
+
         }
         catch (Exception e)
         {
