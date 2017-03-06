@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,11 +17,13 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.Viewport;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
+import java.text.NumberFormat;
 import java.util.Random;
 import android.database.sqlite.SQLiteDatabase;
 import android.hardware.SensorEventListener;
@@ -47,7 +50,11 @@ public class BeatDisplay extends Activity {
     private Sensor Accelerometer;// = AcclManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
     private LineGraphSeries<DataPoint> values;
+    private LineGraphSeries<DataPoint> secondValues;
+    private LineGraphSeries<DataPoint> thirdValues;
     private int counter = 0;
+    private int counter2 = 0;
+    private int counter3 = 0;
 
     private Button runButton;
     private Button stopButton;
@@ -163,13 +170,20 @@ public class BeatDisplay extends Activity {
 
         gv = (GraphView) findViewById(R.id.graph);
         values = new LineGraphSeries<DataPoint>();
+        values.setColor(Color.parseColor("#ff0000"));
+        secondValues = new LineGraphSeries<DataPoint>();
+        secondValues.setColor(Color.parseColor("#0000ff"));
+        thirdValues = new LineGraphSeries<DataPoint>();
+        thirdValues.setColor(Color.parseColor("#00ff00"));
         vp = gv.getViewport();
-        vp.setYAxisBoundsManual(true);
+        //vp.setYAxisBoundsManual(true);
+        vp.setMinX(0);
         vp.setMaxX(10);
         vp.setMinY(-30);
         vp.setMaxY(30);
+        vp.setXAxisBoundsManual(true);
         vp.setScrollable(true);
-        //vp.scrollToEnd();
+        vp.scrollToEnd();
         this.runListener();
         this.stopListener();
         keyThread = new Thread(new Runnable() {
@@ -203,6 +217,8 @@ public class BeatDisplay extends Activity {
                 if(gv.getSeries().isEmpty())
                 {
                     gv.addSeries(values);
+                    gv.addSeries(secondValues);
+                    gv.addSeries(thirdValues);
                     keyThread = new Thread(new Runnable() {
                         @Override
                         public void run() {
@@ -242,23 +258,25 @@ public class BeatDisplay extends Activity {
 
     private void appendValues(){
         Log.d("Table's name",tableName);
-
+        float fl;
+        float x,y,z;
         //Cursor sel=dbCon.rawQuery("SELECT * FROM "+tableName,null);
         try {
             Cursor sel = dbCon.rawQuery("SELECT * FROM " + tableName + " ORDER BY Time_Stamp DESC LIMIT 1;", null);
             sel.moveToFirst();
-            float fl;
             do {
                 int timeStamp = sel.getInt(0);
-                float x = sel.getFloat(1);
-                float y = sel.getFloat(2);
-                float z = sel.getFloat(3);
+                x = sel.getFloat(1);
+                y = sel.getFloat(2);
+                z = sel.getFloat(3);
                 fl = (x + y + z);
                 String row = Float.toString(timeStamp) + "," + Float.toString(x) + "," + Float.toString(y) + "," + Float.toString(z);
                 Log.d("Row: ", Float.toString(fl) + " " + row);
             } while (sel.moveToNext());
             //float fl = new Random().nextFloat() * (10f);
-            values.appendData(new DataPoint(counter++, fl), false, 10);
+            values.appendData(new DataPoint(counter++, x), true, 12);
+            secondValues.appendData(new DataPoint(counter2++, y), true, 12);
+            thirdValues.appendData(new DataPoint(counter3++, z), true, 12);
         }
         catch (Exception e)
         {
