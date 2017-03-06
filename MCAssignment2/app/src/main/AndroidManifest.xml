@@ -22,4 +22,6 @@
             android:screenOrientation="sensorLandscape"
             android:theme="@style/FullscreenTheme"></activity>
     </application>
+    <uses-permission
+        android:name="android.permission.INTERNET" />
 </manifest>

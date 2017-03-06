@@ -1,35 +1,50 @@
 package com.example.vamsikrishnag.mcassignment1;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.AssetManager;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
-import android.support.v7.app.AppCompatActivity;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.Viewport;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
-import java.text.NumberFormat;
+import java.io.BufferedInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.util.Random;
-import android.database.sqlite.SQLiteDatabase;
-import android.hardware.SensorEventListener;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorManager;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 /**
  * Created by vamsikrishnag on 2/2/17.
@@ -62,6 +77,8 @@ public class BeatDisplay extends Activity {
     private Thread keyThread;
     private GraphView gv;
     private Viewport vp;
+    ProgressDialog progressDialogObject = null;
+    SSLContext context = null;
     private boolean firstStart = true;
     String tableName;
     boolean flag=true;
@@ -131,7 +148,6 @@ public class BeatDisplay extends Activity {
         {
             Log.d("Table Already exists: ",t_name);
         }
-        return;
     }
 
     @Override
@@ -171,11 +187,11 @@ public class BeatDisplay extends Activity {
 
         gv = (GraphView) findViewById(R.id.graph);
         values = new LineGraphSeries<DataPoint>();
-        values.setColor(Color.parseColor("#ff0000"));
+        values.setColor(Color.parseColor(Constants.redCC));
         secondValues = new LineGraphSeries<DataPoint>();
-        secondValues.setColor(Color.parseColor("#0000ff"));
+        secondValues.setColor(Color.parseColor(Constants.greenCC));
         thirdValues = new LineGraphSeries<DataPoint>();
-        thirdValues.setColor(Color.parseColor("#00ff00"));
+        thirdValues.setColor(Color.parseColor(Constants.blueCC));
         vp = gv.getViewport();
         //vp.setYAxisBoundsManual(true);
         vp.setMinX(0);
@@ -187,6 +203,7 @@ public class BeatDisplay extends Activity {
         vp.scrollToEnd();
         this.runListener();
         this.stopListener();
+        this.uploadListener();
         keyThread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -224,7 +241,6 @@ public class BeatDisplay extends Activity {
                         @Override
                         public void run() {
                             for (int i=0;!stopIt;i++){
-
                                 runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
@@ -236,7 +252,6 @@ public class BeatDisplay extends Activity {
                                 }catch (InterruptedException e){
                                     Log.d("Interrupted",e.toString());
                                 }
-                                //flag=false;
                             }
                         }
                     });
@@ -288,6 +303,8 @@ public class BeatDisplay extends Activity {
                 secondValues.appendData(new DataPoint(counter2++, y), true, 12);
                 thirdValues.appendData(new DataPoint(counter3++, z), true, 12);
                 //values.appendData(new DataPoint(counter++, x), true, 12);
+                row = Float.toString(timeStamp) + "," + Float.toString(x) + "," + Float.toString(y) + "," + Float.toString(z);
+                //Log.d("Row: ", Float.toString(fl) + " " + row);
             } while (sel.moveToNext());
             Log.d("C: ", Integer.toString(c));
             //float fl = new Random().nextFloat() * (10f);
@@ -311,5 +328,175 @@ public class BeatDisplay extends Activity {
         catch (Exception e){
             Log.d(e.getMessage(),"Sensor not registered");
         }
+    }
+
+    public void uploadListener(){
+        int SDK_INT = android.os.Build.VERSION.SDK_INT;
+        if (SDK_INT > 8)
+        {
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
+                    .permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+            //your codes here
+            Button uploadButton =    (Button) findViewById(R.id.upload_button);
+            uploadButton.setOnClickListener(new View.OnClickListener(){
+                @Override
+                public void onClick(View v){
+                    progressDialogObject = ProgressDialog.show(BeatDisplay.this,"","Uploading Database",true);
+                    //Toast.makeText(BeatDisplay.this,"File upload started",Toast.LENGTH_LONG).show();
+                    addCertificate();
+                    uploadToServer();
+                }
+            });
+        }
+
+    }
+
+    public void addCertificate(){
+        // Load CAs from an InputStream
+        // (could be from a resource or ByteArrayInputStream or ...)
+        CertificateFactory cf = null;
+        try {
+            cf = CertificateFactory.getInstance("X.509");
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        }
+        InputStream caInput = null;
+        try {
+
+            Log.d("getFilesDir()",getFilesDir().getAbsolutePath());
+            AssetManager assetManagerObject = getAssets();
+            caInput = new BufferedInputStream(assetManagerObject.open("impactasuedu.crt"));
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+        Certificate ca = null;
+        try {
+            ca = cf.generateCertificate(caInput);
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                caInput.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Create a KeyStore containing our trusted CAs
+        String keyStoreType = KeyStore.getDefaultType();
+        KeyStore keyStore = null;
+        try {
+            keyStore = KeyStore.getInstance(keyStoreType);
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        }
+        try {
+            keyStore.load(null, null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        }
+        try {
+            keyStore.setCertificateEntry("ca", ca);
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        }
+
+        // Create a TrustManager that trusts the CAs in our KeyStore
+        String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
+        TrustManagerFactory tmf = null;
+        try {
+            tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        try {
+            tmf.init(keyStore);
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        }
+
+        // Create an SSLContext that uses our TrustManager
+
+        try {
+            context = SSLContext.getInstance("TLS");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        try {
+            context.init(null, tmf.getTrustManagers(), null);
+        } catch (KeyManagementException e) {
+            e.printStackTrace();
+        }
+
+    }
+    public int uploadToServer(){
+        HttpsURLConnection conn = null;
+        DataOutputStream outputStreamObject = null;
+        File sourceFileObject = new File(Constants.uploadFilePath);
+        URL urlObject = null;
+        int bytesRem,readBytes;
+        FileInputStream fsObject = null;
+        int serverCode = 0;
+        int bufferSize = 0;
+        byte [] byteArr;
+        int maxBuff = 1024*1024;
+        String respMessage;
+        if(!sourceFileObject.isFile()){
+            Log.d("uploadFile","Source File not exist: "+Constants.uploadFilePath );
+            return 0;
+        }else{
+            try {
+                fsObject = new FileInputStream(sourceFileObject);
+                urlObject = new URL(Constants.uploadURIinServer);
+                conn = (HttpsURLConnection) urlObject.openConnection();
+                conn.setSSLSocketFactory(context.getSocketFactory());
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
+                conn.setUseCaches(false);
+                conn.setRequestMethod(Constants.postRequest);
+                outputStreamObject = new DataOutputStream(conn.getOutputStream());
+                outputStreamObject.writeBytes("*******\n");
+                outputStreamObject.writeBytes("form-data;name="+Constants.uploadFilePath+"\n");
+                bytesRem = fsObject.available();
+                bufferSize = Math.min(bytesRem,maxBuff);
+                byteArr = new byte[bufferSize];
+                readBytes = fsObject.read(byteArr,0,bufferSize);
+
+                while (readBytes>0){
+                    outputStreamObject.write(byteArr,0,bufferSize);
+                    bytesRem = fsObject.available();
+                    bufferSize = Math.min(bytesRem,maxBuff);
+                    readBytes = fsObject.read(byteArr,0,bufferSize);
+                }
+
+                outputStreamObject.writeBytes("\n");
+                serverCode = conn.getResponseCode();
+                respMessage = conn.getResponseMessage();
+                Log.d("upload file","Response file: "+respMessage+" "+serverCode);
+
+                if(serverCode==200){
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            Toast.makeText(BeatDisplay.this,"File upload complete",Toast.LENGTH_LONG).show();
+                            Log.d("File upload complete","File upload complete");
+                        }
+                    });
+                    progressDialogObject.dismiss();
+                }
+                fsObject.close();
+                outputStreamObject.flush();
+                outputStreamObject.close();
+            }catch (Exception e){
+                Log.e("Exception upload file","Exception: "+e.getMessage(),e);
+                Log.d("stack trace",e.getStackTrace().toString());
+                progressDialogObject.dismiss();
+            }
+        }
+        return serverCode;
     }
 }
