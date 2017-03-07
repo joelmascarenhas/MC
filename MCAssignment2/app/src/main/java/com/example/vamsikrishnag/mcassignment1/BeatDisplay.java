@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.AssetManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
@@ -14,7 +13,6 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.StrictMode;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -26,30 +24,23 @@ import com.jjoe64.graphview.Viewport;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
-import java.io.BufferedInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.Random;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 /**
@@ -93,18 +84,14 @@ public class BeatDisplay extends Activity {
     private SensorEventListener acclListener=new SensorEventListener() {
         @Override
         public void onSensorChanged(SensorEvent acclEvent) {
-            //Log.d("Sensor changed","Sensor Changed");
             Sensor AcclSensor = acclEvent.sensor;
-
             if (AcclSensor.getType() == Sensor.TYPE_ACCELEROMETER) {
                 float x = acclEvent.values[0];
                 float y = acclEvent.values[1];
                 float z = acclEvent.values[2];
                 long currentTime = System.currentTimeMillis();
                 String msg=Long.toString(currentTime)+","+Float.toString(x)+","+Float.toString(y)+","+Float.toString(z);
-                //Log.d("Accelerometer Data",msg);
                 if ((currentTime-previousTime)>1000) {
-                    //dbCon=openOrCreateDatabase("Heart Beat",MODE_PRIVATE,null);
                     try {
                         dbCon.execSQL("INSERT INTO " + tableName + " VALUES (" + msg + ");");
                     }
@@ -113,7 +100,6 @@ public class BeatDisplay extends Activity {
                         Log.d(e.getMessage()," Insert part");
                     }
                     previousTime=currentTime;
-                    //dbCon.close();
                 }
             }
         }
@@ -124,23 +110,13 @@ public class BeatDisplay extends Activity {
         }
     };
 
-
-    private float[] randList(int n){
-        float retArr [] = new float[n];
-        Random rand = new Random();
-        for (int i=0;i<n;i++){
-            retArr[i] = rand.nextFloat();
-        }
-        return retArr;
-    }
-
+    // Register Sensor to start recording data
     private void registerAcclListener()
     {
         AcclManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         Accelerometer = AcclManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         AcclManager.registerListener(acclListener,Accelerometer,SensorManager.SENSOR_DELAY_NORMAL);
         Log.d("Registered Listener","Registered Listener");
-        return;
     }
 
     private void createTable(String t_name,SQLiteDatabase connection)
@@ -159,7 +135,6 @@ public class BeatDisplay extends Activity {
     @Override
     protected void onResume(){
         super.onResume();
-
     }
 
     @Override
@@ -210,6 +185,7 @@ public class BeatDisplay extends Activity {
         this.runListener();
         this.stopListener();
         this.uploadListener();
+        this.downloadListener();
         keyThread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -238,6 +214,7 @@ public class BeatDisplay extends Activity {
             @Override
             public void onClick(View v) {
                 stopIt = false;
+                registerAcclListener();
                 if(gv.getSeries().isEmpty())
                 {
                     gv.addSeries(values);
@@ -291,7 +268,6 @@ public class BeatDisplay extends Activity {
             selectQuery="SELECT * FROM " + tableName + " ORDER BY Time_Stamp DESC LIMIT 10;";
             flag=false;
         }
-        //Cursor sel=dbCon.rawQuery("SELECT * FROM "+tableName,null);
         try {
             Cursor sel = dbCon.rawQuery(selectQuery, null);
             int c=0;
@@ -303,17 +279,13 @@ public class BeatDisplay extends Activity {
                 z = sel.getFloat(3);
                 fl = (x + y + z);
                 c++;
-                String row = Integer.toString(c)+","+Float.toString(timeStamp) + "," + Float.toString(x) + "," + Float.toString(y) + "," + Float.toString(z);
-                Log.d("Row Val: ", Float.toString(fl) + " " + row);
+                /*String row = Integer.toString(c)+","+Float.toString(timeStamp) + "," + Float.toString(x) + "," + Float.toString(y) + "," + Float.toString(z);
+                Log.d("Row Val: ", Float.toString(fl) + " " + row);*/
                 values.appendData(new DataPoint(counter++, x), true, 12);
                 secondValues.appendData(new DataPoint(counter2++, y), true, 12);
                 thirdValues.appendData(new DataPoint(counter3++, z), true, 12);
-                //values.appendData(new DataPoint(counter++, x), true, 12);
-                row = Float.toString(timeStamp) + "," + Float.toString(x) + "," + Float.toString(y) + "," + Float.toString(z);
-                //Log.d("Row: ", Float.toString(fl) + " " + row);
             } while (sel.moveToNext());
             Log.d("C: ", Integer.toString(c));
-            //float fl = new Random().nextFloat() * (10f);
 
         }
         catch (Exception e)
@@ -336,113 +308,19 @@ public class BeatDisplay extends Activity {
         }
     }
 
+
     public void uploadListener(){
-        int SDK_INT = android.os.Build.VERSION.SDK_INT;
-        if (SDK_INT > 8)
-        {
-            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
-                    .permitAll().build();
-            StrictMode.setThreadPolicy(policy);
-            //your codes here
             Button uploadButton =    (Button) findViewById(R.id.upload_button);
-            final Upload uploadAsync = new Upload(BeatDisplay.this);
             uploadButton.setOnClickListener(new View.OnClickListener(){
                 @Override
                 public void onClick(View v){
                     progressDialogObject = ProgressDialog.show(BeatDisplay.this,"","Uploading Database",true);
-                    //Toast.makeText(BeatDisplay.this,"File upload started",Toast.LENGTH_LONG).show();
-                    //addCertificate();
-                    //uploadToServer();
-                    uploadAsync.execute();
+                    new Upload(BeatDisplay.this).execute();
                     progressDialogObject.dismiss();
                 }
             });
-        }
-
     }
 
-    public void addCertificate(){
-        // Load CAs from an InputStream
-        // (could be from a resource or ByteArrayInputStream or ...)
-        CertificateFactory cf = null;
-        try {
-            cf = CertificateFactory.getInstance("X.509");
-        } catch (CertificateException e) {
-            e.printStackTrace();
-        }
-        InputStream caInput = null;
-        try {
-
-            Log.d("getFilesDir()",getFilesDir().getAbsolutePath());
-            AssetManager assetManagerObject = getAssets();
-            caInput = new BufferedInputStream(assetManagerObject.open("impactasuedu.crt"));
-        } catch(IOException e){
-            e.printStackTrace();
-        }
-        Certificate ca = null;
-        try {
-            ca = cf.generateCertificate(caInput);
-        } catch (CertificateException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                caInput.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        // Create a KeyStore containing our trusted CAs
-        String keyStoreType = KeyStore.getDefaultType();
-        KeyStore keyStore = null;
-        try {
-            keyStore = KeyStore.getInstance(keyStoreType);
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
-        }
-        try {
-            keyStore.load(null, null);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (CertificateException e) {
-            e.printStackTrace();
-        }
-        try {
-            keyStore.setCertificateEntry("ca", ca);
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
-        }
-
-        // Create a TrustManager that trusts the CAs in our KeyStore
-        String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
-        TrustManagerFactory tmf = null;
-        try {
-            tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        try {
-            tmf.init(keyStore);
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
-        }
-
-        // Create an SSLContext that uses our TrustManager
-
-        try {
-            context = SSLContext.getInstance("TLS");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        try {
-            context.init(null, tmf.getTrustManagers(), null);
-        } catch (KeyManagementException e) {
-            e.printStackTrace();
-        }
-
-    }
 
     class Upload extends AsyncTask{
         private Context context1;
@@ -452,51 +330,36 @@ public class BeatDisplay extends Activity {
 
         @Override
         protected Object doInBackground(Object[] params) {
-
-            InputStream input = null;
-            OutputStream output = null;
             HttpsURLConnection conn = null;
             int serverResponseCode = 0;
+            DataOutputStream dataOutputStreamObject = null;
+            String lineEnd = "\r\n";
+            String hyphens = "--";
+            String boundaryMarker = "*****";
+            int bytesRead, bytesAvailable, bufferSize;
+            byte[] buffer;
+            int maxBufferSize = 1 * 1024 * 1024;
+            URL url = null;
+            FileInputStream fileInputStream = null;
+            File sourceFile = new File(Constants.uploadFilePath + "" + Constants.uploadFileName);
+
+            // Since Impact lab ssl certificates are not recognized authorizing to accept any ssl certificates
             TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
                 public X509Certificate[] getAcceptedIssuers() {
                     return null;
                 }
-
                 @Override
                 public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
-                    // Not implemented
                 }
-
                 @Override
                 public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
-                    // Not implemented
                 }
             }};
-
             try {
                 SSLContext sc = SSLContext.getInstance("TLS");
-
                 sc.init(null, trustAllCerts, new SecureRandom());
-
                 HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-            } catch (KeyManagementException e) {
-                e.printStackTrace();
-            } catch (NoSuchAlgorithmException e) {
-                e.printStackTrace();
-            }
-            try {
-                //URL url = new URL(sUrl[0]);
-
-                DataOutputStream dataOutputStreamObject = null;
-                String lineEnd = "\r\n";
-                String hyphens = "--";
-                String boundaryMarker = "*****";
-                int bytesRead, bytesAvailable, bufferSize;
-                byte[] buffer;
-                int maxBufferSize = 1 * 1024 * 1024;
-                File sourceFile = new File(Constants.uploadFilePath + "" + Constants.uploadFileName);
                 if (!sourceFile.isFile()) {
-                    //dialog.dismiss();
                     Log.e("uploadFile", "Source File not exist :"
                             + Constants.uploadFilePath + "" + Constants.uploadFileName);
                     runOnUiThread(new Runnable() {
@@ -507,19 +370,19 @@ public class BeatDisplay extends Activity {
                     });
                     return "Source File not exist";
                 } else {
-                    try {
+
                         // open a URL connection to the Servlet
-                        FileInputStream fileInputStream = new FileInputStream(sourceFile);
-                        URL url = new URL(Constants.uploadURIinServer);
+                        fileInputStream = new FileInputStream(sourceFile);
+                        url = new URL(Constants.uploadURIinServer);
                         conn = (HttpsURLConnection) url.openConnection();
                         conn.setDoInput(true); // Allow Inputs
                         conn.setDoOutput(true); // Allow Outputs
                         conn.setUseCaches(false); // Don't use a Cached Copy
-                        conn.setRequestMethod("POST");
-                        conn.setRequestProperty("Connection", "Keep-Alive");
-                        conn.setRequestProperty("ENCTYPE", "multipart/form-data");
+                        conn.setRequestMethod(Constants.postRequest);
+                        conn.setRequestProperty(Constants.connectionString, Constants.keepAliveString);
+                        conn.setRequestProperty(Constants.encTypeString, Constants.multipartData);
                         conn.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundaryMarker);
-                        conn.setRequestProperty("uploaded_file", Constants.uploadFilePath + "" + Constants.uploadFileName);
+                        conn.setRequestProperty(Constants.uploadedFileString, Constants.uploadFilePath + "" + Constants.uploadFileName);
                         dataOutputStreamObject = new DataOutputStream(conn.getOutputStream());
 
                         dataOutputStreamObject.writeBytes(hyphens + boundaryMarker + lineEnd);
@@ -569,40 +432,161 @@ public class BeatDisplay extends Activity {
                         fileInputStream.close();
                         dataOutputStreamObject.flush();
                         dataOutputStreamObject.close();
-                    } catch (MalformedURLException ex) {
-                        //dialog.dismiss();
-                        ex.printStackTrace();
-                        String temp = "value displayed";
-                        Log.i("Response Code:" + serverResponseCode, temp);
-                        runOnUiThread(new Runnable() {
-                            public void run() {
-                                Toast.makeText(getApplicationContext(),
-                                        "MalformedURLException Exception : check script url.", Toast.LENGTH_LONG).show();
-                            }
-                        });
-                        Log.e("Upload file to server", "error: " + ex.getMessage(), ex);
-                    } catch (Exception e) {
-                        //dialog.dismiss();
-                        e.printStackTrace();
-                        String temp = "value displayed";
-                        Log.i("Response Code:" + serverResponseCode, temp);
-                        runOnUiThread(new Runnable() {
-                            public void run() {
-                                Toast.makeText(getApplicationContext(),
-                                        "Got Exception : see logcat", Toast.LENGTH_LONG).show();
-                            }
-                        });
-                        Log.e("Upload file to server", "Exception : "
-                                + e.getMessage(), e);
-                    }
+                        conn.disconnect();
                     return ("String response code:" + serverResponseCode);
 
                 }
-            } catch (Exception ex) {
-                Log.d("Exception",""+ex.toString());
+
+            }catch (KeyManagementException e) {
+                e.printStackTrace();
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+            catch (MalformedURLException ex) {
+                //dialog.dismiss();
+                ex.printStackTrace();
+                String temp = "value displayed";
+                Log.i("Response Code:" + serverResponseCode, temp);
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        Toast.makeText(getApplicationContext(),
+                                "MalformedURLException Exception : check script url.", Toast.LENGTH_LONG).show();
+                    }
+                });
+                Log.e("Upload file to server", "error: " + ex.getMessage(), ex);
+            } catch (Exception e) {
+                //dialog.dismiss();
+                e.printStackTrace();
+                String temp = "value displayed";
+                Log.i("Response Code:" + serverResponseCode, temp);
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        Toast.makeText(getApplicationContext(),
+                                "Got Exception : see logcat", Toast.LENGTH_LONG).show();
+                    }
+                });
+                Log.e("Upload file to server", "Exception : "
+                        + e.getMessage(), e);
             }
             return "success";
         }
         }
+
+
+    class Download extends AsyncTask{
+        private Context context1;
+        public Download(Context context) {
+            this.context1 = context;
+        }
+
+        @Override
+        protected Object doInBackground(Object[] params) {
+            InputStream input = null;
+            OutputStream output = null;
+            HttpsURLConnection conn = null;
+            URL url = null;
+            FileInputStream fileInputStream = null;
+            byte[] downData = null;
+            int serverResponseCode = 0;
+            TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+                public X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
+                @Override
+                public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+                }
+                @Override
+                public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+                }
+            }};
+
+            try {
+                SSLContext sc = SSLContext.getInstance("TLS");
+                sc.init(null, trustAllCerts, new SecureRandom());
+                HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+                DataOutputStream dataOutputStreamObject = null;
+                // open a URL connection to the Servlet
+                url = new URL(Constants.downloadURL);
+                conn = (HttpsURLConnection) url.openConnection();
+                input = conn.getInputStream();
+                output = new FileOutputStream(Constants.uploadFilePath+Constants.uploadFileName);
+                downData = new byte[4096];
+                int count;
+                conn.connect();
+                while((count=input.read(downData)) != -1){
+                    if(isCancelled()){
+                        input.close();
+                        return null;
+                    }
+                    output.write(downData,0,count);
+                }
+            }
+            catch (KeyManagementException e) {
+                e.printStackTrace();
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            } catch (MalformedURLException ex) {
+                //dialog.dismiss();
+                ex.printStackTrace();
+                String temp = "value displayed";
+                Log.i("Response Code:" + serverResponseCode, temp);
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        Toast.makeText(getApplicationContext(),
+                                "MalformedURLException Exception : check script url.", Toast.LENGTH_LONG).show();
+                    }
+                });
+                Log.e("Upload file to server", "error: " + ex.getMessage(), ex);
+            } catch (Exception e) {
+                //dialog.dismiss();
+                e.printStackTrace();
+                String temp = "value displayed";
+                Log.i("Response Code:" + serverResponseCode, temp);
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        Toast.makeText(getApplicationContext(),
+                                "Got Exception : see logcat", Toast.LENGTH_LONG).show();
+                    }
+                });
+                Log.e("Upload file to server", "Exception : "
+                        + e.getMessage(), e);
+                return ("String response code:" + serverResponseCode);
+
+            }
+            return "success";
+        }
+    }
+    public void downloadListener(){
+            Button uploadButton =    (Button) findViewById(R.id.download_button);
+
+            uploadButton.setOnClickListener(new View.OnClickListener(){
+                @Override
+                public void onClick(View v){
+                    progressDialogObject = ProgressDialog.show(BeatDisplay.this,"","Downloading Database",true);
+                    new Download(BeatDisplay.this).execute();
+                    progressDialogObject.dismiss();
+                    stopIt = true;
+                    flag=true;
+                    gv.removeAllSeries();
+                    Log.d("Unregistering sensor","unregistering sensor");
+                    try {
+                        AcclManager.unregisterListener(acclListener);
+                    }
+                    catch (Exception e){
+                        Log.d(e.getMessage(),"Sensor not registered");
+                    }
+                    runOnUiThread(new Runnable() {
+                                      public void run() {
+                                          Toast.makeText(getApplicationContext(),
+                                                  "File Download Completed."
+                                                          + Constants.uploadFileName, Toast.LENGTH_LONG).show();
+                                      }
+                                  }
+                    );
+                }
+            });
+
+
+    }
     }
 
