@@ -6,7 +6,8 @@ package com.example.vamsikrishnag.mcassignment1;
 
 public class Constants {
     public final static String uploadURIinServer = "https://impact.asu.edu/CSE535Spring17Folder/UploadToServer.php";
-    public final static String uploadFilePath = "/data/data/com.example.vamsikrishnag.mcassignment1/databases/Assignment2_Group10";
+    public final static String uploadFilePath = "/data/data/com.example.vamsikrishnag.mcassignment1/databases/";
+    public final static String uploadFileName = "Assignment2_Group10";
     public final static String redCC = "#ff0000";
     public final static String blueCC = "#00ff00";
     public final static String greenCC = "#0000ff";
