@@ -12,6 +12,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.util.Log;
@@ -31,19 +32,25 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Random;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * Created by vamsikrishnag on 2/2/17.
@@ -158,7 +165,7 @@ public class BeatDisplay extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        String appName="Assignment2_Group10";
+        String appName=Constants.uploadFileName;
         setContentView(R.layout.activity_beat_display);
         TextView txtview = (TextView) findViewById(R.id.name);
         TextView txtview1 = (TextView) findViewById(R.id.age);
@@ -338,13 +345,16 @@ public class BeatDisplay extends Activity {
             StrictMode.setThreadPolicy(policy);
             //your codes here
             Button uploadButton =    (Button) findViewById(R.id.upload_button);
+            final Upload uploadAsync = new Upload(BeatDisplay.this);
             uploadButton.setOnClickListener(new View.OnClickListener(){
                 @Override
                 public void onClick(View v){
                     progressDialogObject = ProgressDialog.show(BeatDisplay.this,"","Uploading Database",true);
                     //Toast.makeText(BeatDisplay.this,"File upload started",Toast.LENGTH_LONG).show();
-                    addCertificate();
-                    uploadToServer();
+                    //addCertificate();
+                    //uploadToServer();
+                    uploadAsync.execute();
+                    progressDialogObject.dismiss();
                 }
             });
         }
@@ -433,69 +443,166 @@ public class BeatDisplay extends Activity {
         }
 
     }
-    public int uploadToServer(){
-        HttpsURLConnection conn = null;
-        DataOutputStream outputStreamObject = null;
-        File sourceFileObject = new File(Constants.uploadFilePath);
-        URL urlObject = null;
-        int bytesRem,readBytes;
-        FileInputStream fsObject = null;
-        int serverCode = 0;
-        int bufferSize = 0;
-        byte [] byteArr;
-        int maxBuff = 1024*1024;
-        String respMessage;
-        if(!sourceFileObject.isFile()){
-            Log.d("uploadFile","Source File not exist: "+Constants.uploadFilePath );
-            return 0;
-        }else{
-            try {
-                fsObject = new FileInputStream(sourceFileObject);
-                urlObject = new URL(Constants.uploadURIinServer);
-                conn = (HttpsURLConnection) urlObject.openConnection();
-                conn.setSSLSocketFactory(context.getSocketFactory());
-                conn.setDoInput(true);
-                conn.setDoOutput(true);
-                conn.setUseCaches(false);
-                conn.setRequestMethod(Constants.postRequest);
-                outputStreamObject = new DataOutputStream(conn.getOutputStream());
-                outputStreamObject.writeBytes("*******\n");
-                outputStreamObject.writeBytes("form-data;name="+Constants.uploadFilePath+"\n");
-                bytesRem = fsObject.available();
-                bufferSize = Math.min(bytesRem,maxBuff);
-                byteArr = new byte[bufferSize];
-                readBytes = fsObject.read(byteArr,0,bufferSize);
 
-                while (readBytes>0){
-                    outputStreamObject.write(byteArr,0,bufferSize);
-                    bytesRem = fsObject.available();
-                    bufferSize = Math.min(bytesRem,maxBuff);
-                    readBytes = fsObject.read(byteArr,0,bufferSize);
+    class Upload extends AsyncTask{
+        private Context context1;
+        public Upload(Context context) {
+            this.context1 = context;
+        }
+
+        @Override
+        protected Object doInBackground(Object[] params) {
+
+            InputStream input = null;
+            OutputStream output = null;
+            HttpsURLConnection conn = null;
+            int serverResponseCode = 0;
+            TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+                public X509Certificate[] getAcceptedIssuers() {
+                    return null;
                 }
 
-                outputStreamObject.writeBytes("\n");
-                serverCode = conn.getResponseCode();
-                respMessage = conn.getResponseMessage();
-                Log.d("upload file","Response file: "+respMessage+" "+serverCode);
+                @Override
+                public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+                    // Not implemented
+                }
 
-                if(serverCode==200){
+                @Override
+                public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+                    // Not implemented
+                }
+            }};
+
+            try {
+                SSLContext sc = SSLContext.getInstance("TLS");
+
+                sc.init(null, trustAllCerts, new SecureRandom());
+
+                HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+            } catch (KeyManagementException e) {
+                e.printStackTrace();
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+            try {
+                //URL url = new URL(sUrl[0]);
+
+                DataOutputStream dataOutputStreamObject = null;
+                String lineEnd = "\r\n";
+                String hyphens = "--";
+                String boundaryMarker = "*****";
+                int bytesRead, bytesAvailable, bufferSize;
+                byte[] buffer;
+                int maxBufferSize = 1 * 1024 * 1024;
+                File sourceFile = new File(Constants.uploadFilePath + "" + Constants.uploadFileName);
+                if (!sourceFile.isFile()) {
+                    //dialog.dismiss();
+                    Log.e("uploadFile", "Source File not exist :"
+                            + Constants.uploadFilePath + "" + Constants.uploadFileName);
                     runOnUiThread(new Runnable() {
                         public void run() {
-                            Toast.makeText(BeatDisplay.this,"File upload complete",Toast.LENGTH_LONG).show();
-                            Log.d("File upload complete","File upload complete");
+                            Toast.makeText(getApplicationContext(),
+                                    "Source File not exist :" + Constants.uploadFilePath + "" + Constants.uploadFileName, Toast.LENGTH_LONG).show();
                         }
                     });
-                    progressDialogObject.dismiss();
+                    return "Source File not exist";
+                } else {
+                    try {
+                        // open a URL connection to the Servlet
+                        FileInputStream fileInputStream = new FileInputStream(sourceFile);
+                        URL url = new URL(Constants.uploadURIinServer);
+                        conn = (HttpsURLConnection) url.openConnection();
+                        conn.setDoInput(true); // Allow Inputs
+                        conn.setDoOutput(true); // Allow Outputs
+                        conn.setUseCaches(false); // Don't use a Cached Copy
+                        conn.setRequestMethod("POST");
+                        conn.setRequestProperty("Connection", "Keep-Alive");
+                        conn.setRequestProperty("ENCTYPE", "multipart/form-data");
+                        conn.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundaryMarker);
+                        conn.setRequestProperty("uploaded_file", Constants.uploadFilePath + "" + Constants.uploadFileName);
+                        dataOutputStreamObject = new DataOutputStream(conn.getOutputStream());
+
+                        dataOutputStreamObject.writeBytes(hyphens + boundaryMarker + lineEnd);
+                        dataOutputStreamObject.writeBytes("Content-Disposition: form-data; name=" + "uploaded_file;filename="
+                                + Constants.uploadFilePath + "" + Constants.uploadFileName + "" + lineEnd);
+
+                        dataOutputStreamObject.writeBytes(lineEnd);
+
+                        // create a buffer of  maximum size
+                        bytesAvailable = fileInputStream.available();
+
+                        bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                        buffer = new byte[bufferSize];
+
+                        // read file and write it into form...
+                        bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+                        while (bytesRead > 0) {
+                            dataOutputStreamObject.write(buffer, 0, bufferSize);
+                            bytesAvailable = fileInputStream.available();
+                            bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                            bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+                        }
+                        dataOutputStreamObject.writeBytes(lineEnd);
+                        dataOutputStreamObject.writeBytes(hyphens + boundaryMarker + hyphens + lineEnd);
+                        serverResponseCode = conn.getResponseCode();
+                        String serverResponseMessage = conn.getResponseMessage();
+                        conn.connect();
+                        serverResponseCode = conn.getResponseCode();
+                        if (conn.getResponseCode() != HttpsURLConnection.HTTP_OK) {
+                            return "Server returned HTTP " + conn.getResponseCode()
+                                    + " " + conn.getResponseMessage();
+                        }
+                        Log.i("uploadFile", "HTTP Response is : "
+                                + serverResponseMessage + ": " + serverResponseCode);
+                        if (serverResponseCode == HttpsURLConnection.HTTP_OK) {
+                            runOnUiThread(new Runnable() {
+                                              public void run() {
+                                                  Toast.makeText(getApplicationContext(),
+                                                          "File Upload Completed."
+                                                                  + Constants.uploadFileName, Toast.LENGTH_LONG).show();
+                                              }
+                                          }
+                            );
+                        }
+
+                        //close the streams //
+                        fileInputStream.close();
+                        dataOutputStreamObject.flush();
+                        dataOutputStreamObject.close();
+                    } catch (MalformedURLException ex) {
+                        //dialog.dismiss();
+                        ex.printStackTrace();
+                        String temp = "value displayed";
+                        Log.i("Response Code:" + serverResponseCode, temp);
+                        runOnUiThread(new Runnable() {
+                            public void run() {
+                                Toast.makeText(getApplicationContext(),
+                                        "MalformedURLException Exception : check script url.", Toast.LENGTH_LONG).show();
+                            }
+                        });
+                        Log.e("Upload file to server", "error: " + ex.getMessage(), ex);
+                    } catch (Exception e) {
+                        //dialog.dismiss();
+                        e.printStackTrace();
+                        String temp = "value displayed";
+                        Log.i("Response Code:" + serverResponseCode, temp);
+                        runOnUiThread(new Runnable() {
+                            public void run() {
+                                Toast.makeText(getApplicationContext(),
+                                        "Got Exception : see logcat", Toast.LENGTH_LONG).show();
+                            }
+                        });
+                        Log.e("Upload file to server", "Exception : "
+                                + e.getMessage(), e);
+                    }
+                    return ("String response code:" + serverResponseCode);
+
                 }
-                fsObject.close();
-                outputStreamObject.flush();
-                outputStreamObject.close();
-            }catch (Exception e){
-                Log.e("Exception upload file","Exception: "+e.getMessage(),e);
-                Log.d("stack trace",e.getStackTrace().toString());
-                progressDialogObject.dismiss();
+            } catch (Exception ex) {
+                Log.d("Exception",""+ex.toString());
             }
+            return "success";
         }
-        return serverCode;
+        }
     }
-}
+
