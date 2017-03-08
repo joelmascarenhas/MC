@@ -578,7 +578,7 @@ public class BeatDisplay extends Activity {
                     runOnUiThread(new Runnable() {
                                       public void run() {
                                           Toast.makeText(getApplicationContext(),
-                                                  "File Download Completed."
+                                                  "File Download Completed. Please hit run to view recent 10 seconds data"
                                                           + Constants.uploadFileName, Toast.LENGTH_LONG).show();
                                       }
                                   }
