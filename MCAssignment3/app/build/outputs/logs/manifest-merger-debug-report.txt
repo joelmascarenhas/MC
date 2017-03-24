@@ -1,0 +1,92 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:2:1-27:12
+	package
+		ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:3:5-54
+		INJECTED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml
+		INJECTED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml
+	android:versionName
+		INJECTED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml
+		INJECTED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:2:11-69
+	android:versionCode
+		INJECTED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml
+		INJECTED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml
+application
+ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:5:5-24:19
+MERGED from [com.android.support:design:25.1.0] /home/sdj/.android/build-cache/8b925cf2c057ba05385f2baddbfe29ddec434ee7/output/AndroidManifest.xml:25:5-20
+MERGED from [com.android.support:appcompat-v7:25.1.0] /home/sdj/.android/build-cache/0b59ce77212b3eeb4e5c93cd69e3015976f5536a/output/AndroidManifest.xml:25:5-20
+MERGED from [com.android.support:animated-vector-drawable:25.1.0] /home/sdj/.android/build-cache/e418197e3359cb35ebce072ada66136b2d26b019/output/AndroidManifest.xml:22:5-20
+MERGED from [com.android.support:support-vector-drawable:25.1.0] /home/sdj/.android/build-cache/34ecd8fe2bb1a5a29ec671e04c49125e996a81c3/output/AndroidManifest.xml:23:5-20
+MERGED from [com.android.support:transition:25.1.0] /home/sdj/.android/build-cache/a4403d7ed1af261b946a9a84939d2a9a2c5734ce/output/AndroidManifest.xml:22:5-20
+MERGED from [com.jjoe64:graphview:4.2.1] /home/sdj/.android/build-cache/7f1eed392a428ab27fcef23346a3e1b9cde290cf/output/AndroidManifest.xml:11:5-12:19
+MERGED from [com.android.support:support-v4:25.1.0] /home/sdj/.android/build-cache/4dfbb5b89e2e52b991d17208808cd384cf643e39/output/AndroidManifest.xml:25:5-20
+MERGED from [com.android.support:support-fragment:25.1.0] /home/sdj/.android/build-cache/441bb65bd65634eb9f6c56db51626f7a8678d715/output/AndroidManifest.xml:25:5-20
+MERGED from [com.android.support:support-media-compat:25.1.0] /home/sdj/.android/build-cache/5bb4e07a10ba01fa5c656eecf6ee8239c8e0ea53/output/AndroidManifest.xml:25:5-20
+MERGED from [com.android.support:support-core-ui:25.1.0] /home/sdj/.android/build-cache/c4caa0fb607a63ebc8f9a883dca6cd6c0f67abe8/output/AndroidManifest.xml:25:5-20
+MERGED from [com.android.support:support-core-utils:25.1.0] /home/sdj/.android/build-cache/bcf440ad48cae262a343a6522c15f711e3a3618f/output/AndroidManifest.xml:25:5-20
+MERGED from [com.android.support:support-compat:25.1.0] /home/sdj/.android/build-cache/6d9d50dd69a289e434b8110b6f0cb6ae72f6ca77/output/AndroidManifest.xml:25:5-20
+	android:label
+		ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:8:9-44
+	android:supportsRtl
+		ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:9:9-35
+	android:allowBackup
+		ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:6:9-35
+	android:icon
+		ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:7:9-43
+	android:theme
+		ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:10:9-40
+activity#com.example.vamsikrishnag.mcassignment1.MainActivity
+ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:11:9-18:20
+	android:screenOrientation
+		ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:12:13-56
+	android:name
+		ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:11:19-47
+intent-filter#android.intent.action.MAIN+android.intent.category.LAUNCHER
+ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:13:13-17:29
+action#android.intent.action.MAIN
+ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:14:17-69
+	android:name
+		ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:14:25-66
+category#android.intent.category.LAUNCHER
+ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:16:17-77
+	android:name
+		ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:16:27-74
+activity#com.example.vamsikrishnag.mcassignment1.BeatDisplay
+ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:19:9-23:63
+	android:screenOrientation
+		ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:22:13-56
+	android:label
+		ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:21:13-40
+	android:theme
+		ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:23:13-51
+	android:name
+		ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:20:13-40
+uses-permission#android.permission.INTERNET
+ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:25:5-26:54
+	android:name
+		ADDED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml:26:9-51
+uses-sdk
+INJECTED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
+MERGED from [com.android.support:design:25.1.0] /home/sdj/.android/build-cache/8b925cf2c057ba05385f2baddbfe29ddec434ee7/output/AndroidManifest.xml:21:5-23:62
+MERGED from [com.android.support:appcompat-v7:25.1.0] /home/sdj/.android/build-cache/0b59ce77212b3eeb4e5c93cd69e3015976f5536a/output/AndroidManifest.xml:21:5-23:78
+MERGED from [com.android.support:animated-vector-drawable:25.1.0] /home/sdj/.android/build-cache/e418197e3359cb35ebce072ada66136b2d26b019/output/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-vector-drawable:25.1.0] /home/sdj/.android/build-cache/34ecd8fe2bb1a5a29ec671e04c49125e996a81c3/output/AndroidManifest.xml:21:5-43
+MERGED from [com.android.support:recyclerview-v7:25.1.0] /home/sdj/.android/build-cache/5e6721477bbb660eea176ac11f58c219ce7e8375/output/AndroidManifest.xml:20:5-43
+MERGED from [com.android.support:transition:25.1.0] /home/sdj/.android/build-cache/a4403d7ed1af261b946a9a84939d2a9a2c5734ce/output/AndroidManifest.xml:20:5-44
+MERGED from [com.jjoe64:graphview:4.2.1] /home/sdj/.android/build-cache/7f1eed392a428ab27fcef23346a3e1b9cde290cf/output/AndroidManifest.xml:7:5-9:41
+MERGED from [com.android.support:support-v4:25.1.0] /home/sdj/.android/build-cache/4dfbb5b89e2e52b991d17208808cd384cf643e39/output/AndroidManifest.xml:21:5-23:54
+MERGED from [com.android.support:support-fragment:25.1.0] /home/sdj/.android/build-cache/441bb65bd65634eb9f6c56db51626f7a8678d715/output/AndroidManifest.xml:21:5-23:60
+MERGED from [com.android.support:support-media-compat:25.1.0] /home/sdj/.android/build-cache/5bb4e07a10ba01fa5c656eecf6ee8239c8e0ea53/output/AndroidManifest.xml:21:5-23:63
+MERGED from [com.android.support:support-core-ui:25.1.0] /home/sdj/.android/build-cache/c4caa0fb607a63ebc8f9a883dca6cd6c0f67abe8/output/AndroidManifest.xml:21:5-23:58
+MERGED from [com.android.support:support-core-utils:25.1.0] /home/sdj/.android/build-cache/bcf440ad48cae262a343a6522c15f711e3a3618f/output/AndroidManifest.xml:21:5-23:61
+MERGED from [com.android.support:support-compat:25.1.0] /home/sdj/.android/build-cache/6d9d50dd69a289e434b8110b6f0cb6ae72f6ca77/output/AndroidManifest.xml:21:5-23:58
+	tools:overrideLibrary
+		ADDED from [com.android.support:design:25.1.0] /home/sdj/.android/build-cache/8b925cf2c057ba05385f2baddbfe29ddec434ee7/output/AndroidManifest.xml:23:9-59
+	android:targetSdkVersion
+		INJECTED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml
+		INJECTED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml
+		INJECTED from /home/sdj/AndroidStudioProjects/MCAssignments/MCAssignment2/app/src/main/AndroidManifest.xml
