@@ -292,7 +292,7 @@ public class BeatDisplay extends Activity {
             Log.d("C: ", Integer.toString(c));
             //float fl = new Random().nextFloat() * (10f);
 
-        }
+        }//comment
         catch (Exception e)
         {
             Log.d("Append Value"," DB object closed");
