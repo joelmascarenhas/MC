@@ -287,7 +287,7 @@ public class BeatDisplay extends Activity {
             } while (sel.moveToNext());
             Log.d("C: ", Integer.toString(c));
 
-        }//comment
+        }
         catch (Exception e)
         {
             Log.d("Append Value"," DB object closed");
