@@ -30,6 +30,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.StreamCorruptedException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.KeyManagementException;
@@ -80,6 +81,10 @@ public class BeatDisplay extends Activity {
     String tableName;
     boolean flag=true;
 
+    private int activity_label; //0- walking, 1- running,  2 - eating
+    private int columnSize=0;
+    private String rowToBeInserted="";
+
     long previousTime=0;
     private SensorEventListener acclListener=new SensorEventListener() {
         @Override
@@ -90,16 +95,31 @@ public class BeatDisplay extends Activity {
                 float y = acclEvent.values[1];
                 float z = acclEvent.values[2];
                 long currentTime = System.currentTimeMillis();
-                String msg=Long.toString(currentTime)+","+Float.toString(x)+","+Float.toString(y)+","+Float.toString(z);
-                if ((currentTime-previousTime)>1000) {
+//                String msg=Long.toString(currentTime)+","+Float.toString(x)+","+Float.toString(y)+","+Float.toString(z);
+                String msg=Float.toString(x)+","+Float.toString(y)+","+Float.toString(z);
+//                if ((currentTime-previousTime)>1000)
+                Log.d("Current Time:",Integer.toString(columnSize)+","+Long.toString(currentTime-previousTime));
+                if (columnSize<50)
+                {
+                    rowToBeInserted=rowToBeInserted+","+msg;
+                    previousTime=currentTime;
+                    columnSize++;
+                }
+                else if (columnSize==50)
+                {
+                    rowToBeInserted=Long.toString(currentTime)+rowToBeInserted+","+Integer.toString(activity_label);
                     try {
-                        dbCon.execSQL("INSERT INTO " + tableName + " VALUES (" + msg + ");");
+                        dbCon.execSQL("INSERT INTO " + tableName + " VALUES (" + rowToBeInserted + ");");
+                        Toast.makeText(getApplicationContext()," Row Inserted ",Toast.LENGTH_LONG).show();
                     }
                     catch (Exception e)
                     {
-                        Log.d(e.getMessage()," Insert part");
+                        Log.d(e.getMessage()," at - Insert part "+rowToBeInserted);
                     }
-                    previousTime=currentTime;
+                    rowToBeInserted="";
+                    columnSize=0;
+                    AcclManager.unregisterListener(acclListener);
+                    finish();
                 }
             }
         }
@@ -115,15 +135,25 @@ public class BeatDisplay extends Activity {
     {
         AcclManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         Accelerometer = AcclManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        AcclManager.registerListener(acclListener,Accelerometer,SensorManager.SENSOR_DELAY_NORMAL);
+        AcclManager.registerListener(acclListener,Accelerometer,100000/*0.1 secondsSensorManager.SENSOR_DELAY_NORMAL*/);
         Log.d("Registered Listener","Registered Listener");
     }
 
     private void createTable(String t_name,SQLiteDatabase connection)
     {
         Log.d(t_name,t_name);
+        String createTableName="CREATE TABLE " + t_name + " (ID REAL";
+        for (int i=0;i<50;i++)
+        {
+            String x_attr="Accel_X_"+Integer.toString(i+1)+" REAL";
+            String y_attr="Accel_Y_"+Integer.toString(i+1)+" REAL";
+            String z_attr="Accel_Z_"+Integer.toString(i+1)+" REAL";
+            createTableName=createTableName+", "+x_attr+", "+y_attr+", "+z_attr;
+        }
+        createTableName=createTableName+", Activity_Label INTEGER);"; //0- walking, 1- running,  2 - eating
         try {
-            connection.execSQL("CREATE TABLE " + t_name + " (Time_Stamp REAL, X_Value REAL, Y_Value REAL, Z_Value REAL);");
+//            connection.execSQL("CREATE TABLE " + t_name + " (Time_Stamp REAL, X_Value REAL, Y_Value REAL, Z_Value REAL);");
+            connection.execSQL(createTableName);
             Log.d("Table Created ", t_name);
         }
         catch (Exception e)
@@ -154,6 +184,7 @@ public class BeatDisplay extends Activity {
             String getAge = (String) bd.get("age");
             String getId = (String) bd.get("id");
             String gen = (String) bd.get("sex");
+//            activity_label=1;//(int) bd.get("Activity"); //Set this on create bundle instance
             tableName=(String) bd.get("TableName");
             txtview.setText(getName);
             txtview1.setText(getAge);
@@ -163,7 +194,7 @@ public class BeatDisplay extends Activity {
         }
 
         dbCon=openOrCreateDatabase(appName,MODE_PRIVATE,null);
-        registerAcclListener();
+//        registerAcclListener();
         createTable(tableName,dbCon);
 
         gv = (GraphView) findViewById(R.id.graph);
@@ -246,6 +277,12 @@ public class BeatDisplay extends Activity {
         });
     }
 
+    public void performActivity(int label)
+    {
+        registerAcclListener();
+        activity_label=label;
+    }
+
     public void stopListener(){
         stopButton = (Button) findViewById(R.id.stop_button);
         stopButton.setOnClickListener(new View.OnClickListener(){
@@ -262,10 +299,10 @@ public class BeatDisplay extends Activity {
         Log.d("Table's name",tableName);
         float fl;
         float x,y,z;
-        String selectQuery="SELECT * FROM " + tableName + " ORDER BY Time_Stamp DESC LIMIT 1;";
+        String selectQuery="SELECT * FROM " + tableName + " ORDER BY ID DESC LIMIT 1;";
         if(flag)
         {
-            selectQuery="SELECT * FROM " + tableName + " ORDER BY Time_Stamp DESC LIMIT 10;";
+            selectQuery="SELECT * FROM " + tableName + " ORDER BY ID DESC LIMIT 10;";
             flag=false;
         }
         try {
@@ -277,6 +314,7 @@ public class BeatDisplay extends Activity {
                 x = sel.getFloat(1);
                 y = sel.getFloat(2);
                 z = sel.getFloat(3);
+                Log.d("Column Count:-", Integer.toString(sel.getColumnCount()));
                 fl = (x + y + z);
                 c++;
                 /*String row = Integer.toString(c)+","+Float.toString(timeStamp) + "," + Float.toString(x) + "," + Float.toString(y) + "," + Float.toString(z);
