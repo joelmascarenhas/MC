@@ -1,5 +1,5 @@
 package com.example.vamsikrishnag.mcassignment1;
-
+//Dummy comment
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -287,7 +287,7 @@ public class BeatDisplay extends Activity {
             } while (sel.moveToNext());
             Log.d("C: ", Integer.toString(c));
 
-        }
+        }//comment
         catch (Exception e)
         {
             Log.d("Append Value"," DB object closed");
